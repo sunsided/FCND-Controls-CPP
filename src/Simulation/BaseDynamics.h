@@ -13,71 +13,84 @@
 #endif
 
 using SLR::Quaternion;
+
 class Trajectory;
 
-class BaseDynamics : public DataSource
-{
+class BaseDynamics : public DataSource {
 public:
-	BaseDynamics(string name="");
-	virtual ~BaseDynamics() {}; // destructor
+    BaseDynamics(string name = "");
 
-	virtual int Initialize();
+    virtual ~BaseDynamics() {}; // destructor
 
-  virtual void Run(float dt, float simulationTime, int &idum,  // updates the simulation
-    V3F externalForceInGlobalFrame = V3F(),    // required to take net forces into account
-    V3F externalMomentInBodyFrame = V3F())   // required to take net moments into account
-  {}
+    virtual int Initialize();
 
-	virtual void SetCommands(const VehicleCommand& cmd) {};	// update commands in the simulator coming from a command2 packet
+    virtual void Run(float dt, float simulationTime, int &idum,  // updates the simulation
+                     V3F externalForceInGlobalFrame = V3F(),    // required to take net forces into account
+                     V3F externalMomentInBodyFrame = V3F())   // required to take net moments into account
+    {}
 
-	// inheritors have no reason to alter the following functions and therefore no sense demanding that they do
-	GlobalPose     GenerateGP () ; // returns the current simulation state in Vicon format - const?
-  void SyncToVicon(GlobalPose gp); // sets simulation to zero velocities and vicon-based poses.
+    virtual void
+    SetCommands(const VehicleCommand &cmd) {};    // update commands in the simulator coming from a command2 packet
 
-  V3F Position() const { return pos; };
-  V3F Velocity() const { return vel; };
-  V3F Omega() const { return omega; };
-  Quaternion<float> Attitude() const { return quat; }
+    // inheritors have no reason to alter the following functions and therefore no sense demanding that they do
+    GlobalPose GenerateGP(); // returns the current simulation state in Vicon format - const?
+    void SyncToVicon(GlobalPose gp); // sets simulation to zero velocities and vicon-based poses.
 
-  void SetPosition(const V3F& p) { pos = p; }
-  void SetVelocity(const V3F& v) { vel = v; }
-  void SetOmega(const V3F& o) { omega = o; }
-	void SetAttitude(const Quaternion<float>& q){quat = q;}
+    V3F Position() const { return pos; };
 
-  virtual bool GetData(const string& name, float& ret) const;
-  virtual vector<string> GetFields() const;  
+    V3F Velocity() const { return vel; };
 
-  int GetVehicleType(void) {return _vehicleType;};
+    V3F Omega() const { return omega; };
 
-	virtual double GetRotDistInt() { return 0;};
-	virtual double GetXyzDistInt() {return 0;};
-	virtual double GetRotDistBW() {return 0;};
-	virtual double GetXyzDistBW() {return 0;};
-	virtual double GetGyroNoiseInt() {return 0;};
+    Quaternion<float> Attitude() const { return quat; }
 
-  bool Initialized() const {return _initialized;}
+    void SetPosition(const V3F &p) { pos = p; }
 
-  void ResetState(V3F pos=V3F(), V3F vel=V3F(), Quaternion<float> att=Quaternion<float>(), V3F omega=V3F());
+    void SetVelocity(const V3F &v) { vel = v; }
 
-  shared_ptr<Trajectory> _followed_traj;
+    void SetOmega(const V3F &o) { omega = o; }
+
+    void SetAttitude(const Quaternion<float> &q) { quat = q; }
+
+    virtual bool GetData(const string &name, float &ret) const;
+
+    virtual vector<string> GetFields() const;
+
+    int GetVehicleType(void) { return _vehicleType; };
+
+    virtual double GetRotDistInt() { return 0; };
+
+    virtual double GetXyzDistInt() { return 0; };
+
+    virtual double GetRotDistBW() { return 0; };
+
+    virtual double GetXyzDistBW() { return 0; };
+
+    virtual double GetGyroNoiseInt() { return 0; };
+
+    bool Initialized() const { return _initialized; }
+
+    void ResetState(V3F pos = V3F(), V3F vel = V3F(), Quaternion<float> att = Quaternion<float>(), V3F omega = V3F());
+
+    shared_ptr<Trajectory> _followed_traj;
 
 protected:
-  string _name;
+    string _name;
 
-	// pos, vel, acc are in the global frame while omega is in the local frame (body rates)
-	V3F  pos, vel, acc, omega, old_omega; 
-  Quaternion<float>  quat;
+    // pos, vel, acc are in the global frame while omega is in the local frame (body rates)
+    V3F pos, vel, acc, omega, old_omega;
+    Quaternion<float> quat;
 
-  int _vehicleType;
+    int _vehicleType;
 
-  // vehicle geometry and mass properties
-  float M; // veh mass, kg
-  float Ixx,Iyy,Izz;
-  float xMin,yMin,bottom,xMax,yMax,top;
-  bool _initialized;
+    // vehicle geometry and mass properties
+    float M; // veh mass, kg
+    float Ixx, Iyy, Izz;
+    float xMin, yMin, bottom, xMax, yMax, top;
+    bool _initialized;
 
-  float _lastTrajPointTime;
-  float _trajLogStepTime;
+    float _lastTrajPointTime;
+    float _trajLogStepTime;
 };
 
 #ifdef _MSC_VER

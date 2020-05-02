@@ -1,4 +1,4 @@
-# The C++ Project Readme #
+# 3D Quadrocopter Control
 
 This is the readme for the C++ project.
 
@@ -9,8 +9,7 @@ For easy navigation throughout this document, here is an outline:
  - [The tasks](#the-tasks)
  - [Evaluation](#evaluation)
 
-
-## Development Environment Setup ##
+## Development Environment Setup
 
 Regardless of your development platform, the first step is to download or clone this repository.
 
@@ -18,7 +17,7 @@ Once you have the code for the simulator, you will need to install the necessary
 
 Here are the setup and install instructions for each of the recommended IDEs for each different OS options:
 
-### Windows ###
+### Windows
 
 For Windows, the recommended IDE is Visual Studio.  Here are the steps required for getting the project up and running using Visual Studio.
 
@@ -32,7 +31,7 @@ For Windows, the recommended IDE is Visual Studio.  Here are the steps required 
 5. To compile and run the project / simulator, simply click on the green play button at the top of the screen.  When you run the simulator, you should see a single quadcopter, falling down.
 
 
-### OS X ###
+### OS X
 
 For Mac OS X, the recommended IDE is XCode, which you can get via the App Store.
 
@@ -44,7 +43,7 @@ For Mac OS X, the recommended IDE is XCode, which you can get via the App Store.
   3. Compile and run the project. You should see a single quadcopter, falling down.
 
 
-### Linux ###
+### Linux
 
 For Linux, the recommended IDE is QtCreator.
 
@@ -55,15 +54,15 @@ For Linux, the recommended IDE is QtCreator.
 **NOTE:** You may need to install the GLUT libs using `sudo apt-get install freeglut3-dev`
 
 
-### Advanced Versions ###
+### Advanced Versions
 
 These are some more advanced setup instructions for those of you who prefer to use a different IDE or build the code manually.  Note that these instructions do assume a certain level of familiarity with the approach and are not as detailed as the instructions above.
 
-#### CLion IDE ####
+#### CLion IDE
 
 For those of you who are using the CLion IDE for developement on your platform, we have included the necessary `CMakeLists.txt` file needed to build the simulation.
 
-#### CMake on Linux ####
+#### CMake on Linux
 
 For those of you interested in doing manual builds using `cmake`, we have provided a `CMakeLists.txt` file with the necessary configuration.
 
@@ -86,11 +85,11 @@ make
 
 3. You should now be able to run the simulator with `./CPPSim` and you should see a single quadcopter, falling down.
 
-## Simulator Walkthrough ##
+## Simulator Walkthrough
 
 Now that you have all the code on your computer and the simulator running, let's walk through some of the elements of the code and the simulator itself.
 
-### The Code ###
+### The Code
 
 For the project, the majority of your code will be written in `src/QuadControl.cpp`.  This file contains all of the code for the controller that you will be developing.
 
@@ -105,7 +104,7 @@ The syntax of the config files is as follows:
 You will also be using the simulator to fly some difference trajectories to test out the performance of your C++ implementation of your controller. These trajectories, along with supporting code, are found in the `traj` directory of the repo.
 
 
-### The Simulator ###
+### The Simulator
 
 In the simulator window itself, you can right click the window to select between a set of different scenarios that are designed to test the different parts of your controller.
 
@@ -117,7 +116,7 @@ Vehicles are created and graphs are reset whenever a scenario is loaded. When a 
 
 When the simulation is running, you can use the arrow keys on your keyboard to impact forces on your drone to see how your controller reacts to outside forces being applied.
 
-#### Keyboard / Mouse Controls ####
+#### Keyboard / Mouse Controls
 
 There are a handful of keyboard / mouse commands to help with the simulator itself, including applying external forces on your drone to see how your controllers reacts!
 
@@ -132,7 +131,7 @@ There are a handful of keyboard / mouse commands to help with the simulator itse
 
 
 
-### Testing it Out ###
+### Testing it Out
 
 When you run the simulator, you'll notice your quad is falling straight down.  This is due to the fact that the thrusts are simply being set to:
 
@@ -151,7 +150,7 @@ With the proper mass, your simulation should look a little like this:
 </p>
 
 
-## The Tasks ##
+## The Tasks
 
 For this project, you will be building a controller in C++.  You will be implementing and tuning this controller in several steps.
 
@@ -164,7 +163,7 @@ You may find it helpful to consult the [Python controller code](https://github.c
 
 3. **Parameter Ratios**: In this [one-page document](https://www.overleaf.com/read/bgrkghpggnyc#/61023787/) you can find a derivation of the ratio of velocity proportional gain to position proportional gain for a critically damped double integrator system. The ratio of `kpV / kpP` should be 4.
 
-### Body rate and roll/pitch control (scenario 2) ###
+### Body rate and roll/pitch control (scenario 2)
 
 First, you will implement the body rate and roll / pitch control.  For the simulation, you will use `Scenario 2`.  In this scenario, you will see a quad above the origin.  It is created with a small initial rotation speed about its roll axis.  Your controller will need to stabilize the rotational motion and bring the vehicle back to level attitude.
 
@@ -193,7 +192,7 @@ If successful you should now see the quad level itself (as shown below), though 
 </p>
 
 
-### Position/velocity and yaw angle control (scenario 3) ###
+### Position/velocity and yaw angle control (scenario 3)
 
 Next, you will implement the position, altitude and yaw control for your quad.  For the simulation, you will use `Scenario 3`.  This will create 2 identical quads, one offset from its target point (but initialized with yaw = 0) and second offset from target point but yaw = 45 degrees.
 
@@ -215,7 +214,7 @@ Tune position control for settling time. Don’t try to tune yaw control too tig
 
 **Hint:**  For a second order system, such as the one for this quadcopter, the velocity gain (`kpVelXY` and `kpVelZ`) should be at least ~3-4 times greater than the respective position gain (`kpPosXY` and `kpPosZ`).
 
-### Non-idealities and robustness (scenario 4) ###
+### Non-idealities and robustness (scenario 4)
 
 In this part, we will explore some of the non-idealities and robustness of a controller.  For this simulation, we will use `Scenario 4`.  This is a configuration with 3 quads that are all are trying to move one meter forward.  However, this time, these quads are all a bit different:
  - The green quad has its center of mass shifted back
@@ -233,7 +232,7 @@ In this part, we will explore some of the non-idealities and robustness of a con
 </p>
 
 
-### Tracking trajectories ###
+### Tracking trajectories
 
 Now that we have all the working parts of a controller, you will put it all together and test it's performance once again on a trajectory.  For this simulation, you will use `Scenario 5`.  This scenario has two quadcopters:
  - the orange one is following `traj/FigureEight.txt`
@@ -242,7 +241,7 @@ Now that we have all the working parts of a controller, you will put it all toge
 How well is your drone able to follow the trajectory?  It is able to hold to the path fairly well?
 
 
-### Extra Challenge 1 (Optional) ###
+### Extra Challenge 1 (Optional)
 
 You will notice that initially these two trajectories are the same. Let's work on improving some performance of the trajectory itself.
 
@@ -258,14 +257,14 @@ With the two different trajectories, your drones' motions should look like this:
 </p>
 
 
-### Extra Challenge 2 (Optional) ###
+### Extra Challenge 2 (Optional)
 
 For flying a trajectory, is there a way to provide even more information for even better tracking?
 
 How about trying to fly this trajectory as quickly as possible (but within following threshold)!
 
 
-## Evaluation ##
+## Evaluation
 
 To assist with tuning of your controller, the simulator contains real time performance evaluation.  We have defined a set of performance metrics for each of the scenarios that your controllers must meet for a successful submission.
 
@@ -275,7 +274,7 @@ There are two ways to view the output of the evaluation:
  - on the plots, once your quad meets the metrics, you will see a green box appear on the plot notifying you of a **PASS**
 
 
-### Performance Metrics ###
+### Performance Metrics
 
 The specific performance metrics are as follows:
 
@@ -294,6 +293,6 @@ The specific performance metrics are as follows:
  - scenario 5
    - position error of the quad should be less than 0.25 meters for at least 3 seconds
 
-## Authors ##
+## Authors
 
 Thanks to Fotokite for the initial development of the project code and simulator.
