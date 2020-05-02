@@ -109,7 +109,7 @@ For this project, you will be building a controller in C++.  You will be impleme
 tuning this controller in several steps.
 
 You may find it helpful to consult the 
-[Python controller code](https://github.com/udacity/FCND-Controls/blob/solution/controller.py)
+[Python controller code](misc/controller.py) ([source](https://github.com/udacity/FCND-Controls/blob/solution/controller.py)
 as a reference when you build out this controller in C++.
 
 #### Notes on Parameter Tuning
@@ -126,6 +126,11 @@ as a reference when you build out this controller in C++.
    ([source](https://www.overleaf.com/read/bgrkghpggnyc#/61023787/))
    you can find a derivation of the ratio of velocity proportional gain to position proportional
    gain for a critically damped double integrator system. The ratio of `kpV / kpP` should be 4.
+
+Dronecode provides some guidelines on PID tuning at
+
+- [Advanced Multicopter Position Control Tuning](https://docs.px4.io/v1.9.0/en/config_mc/advanced_mc_position_tuning.html) and
+- [Multicopter PID Tuning Guide](https://docs.px4.io/v1.9.0/en/config_mc/pid_tuning_guide_multicopter.html)
 
 ### Body rate and roll/pitch control (scenario 2)
 
