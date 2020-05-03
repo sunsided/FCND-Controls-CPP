@@ -1,0 +1,67 @@
+\documentclass{article}
+\usepackage[margin=0.7in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage[numbers]{natbib}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
+\usepackage{siunitx}
+\usepackage{xcolor}
+
+\title{Double Integrator Control: Cascaded P Controller Gains vs Damping Ratio}
+\author{
+    \parbox{0.3\linewidth}{\centering Sergei Lupashin\\Fotokite}
+}
+
+\begin{document}
+
+    \maketitle
+
+    Let's say we have a system where we command an acceleration $\ddot{x}$ with the goal of controlling position $x$ to a desired value $u$.
+
+    We use a cascaded proportional controller: an inner one for velocity, with gain $K_v$ and an outer one with gain $K_p$. A cascaded P controller may be used instead of a PD controller instead of a for various reasons, including being able to explicitly constrain the desired velocity.
+
+    How does the ratio between $K_v$ and $K_p$ relate to system stability / overshoot / undershoot behavior? How can we make tuning these parameters simpler?
+
+    Start by writing out the math for a double proportional controller:
+    \begin{align}
+        \ddot{x} = K_v(K_p (u - x) - \dot{x})
+    \end{align}
+    where $\ddot{x}$ is the commanded acceleration, $u$ is the desired position, $K_p$ is the position proportional gain, $K_v$ is the velocity proportional gain, and $x$ and $\dot{x}$ are the position and velocity.
+
+    The above equation can be written out as
+    \begin{align}
+        \ddot{x}+K_v \dot{x} + K_v K_p x = K_v K_p u
+    \end{align}
+
+    which means the transfer function is
+    \begin{align}
+        G(s) = \frac{y(s)}{u(s)} = \frac{K_v K_p}{s^2 + K_v s + K_v K_p}
+    \end{align}
+
+    Compare this to the canonical $\omega_n$ (natural frequency) and $\zeta$ (damping ratio) formulation for the transfer function of a 2nd order system:
+    \begin{align}
+        G(s) = \frac{\omega_n^2}{s^2+2\zeta \omega_n s + \omega_n ^2}
+    \end{align}
+
+    By doing some algebra we find
+    \begin{align}
+        K_p = \frac{\omega_n}{2 \zeta}, \quad K_v = 2 \zeta \omega_n
+    \end{align}
+
+    which finally leads us to the ratio of the inner gain to outer gain:
+    \begin{align}
+        \frac{K_v}{K_p} = 4 \zeta^2
+    \end{align}
+
+    For a critically damped system, $\zeta=1$, meaning $K_v/K_p = 4$. For an underdamped system, e.g. $\zeta=0.7$, $K_v/K_p = 1.96$. In many situations, we can achieve reasonable tuning by assuming that $\zeta$ should be somewhere between 0.7 and 1, meaning that the ratio $K_v/K_p$ should be around 2-4.
+    \subsection*{NOTES}
+    \begin{itemize}
+        \item Please note that this is NOT a PD controller, which typically has gains such as $K_p$ and $K_d$, and which we are not talking about here.
+        \item There are often additional complexities such as underlying dynamics to $\ddot{x}$, saturation, etc, that you should consider in tuning your system.
+    \end{itemize}
+
+\end{document}

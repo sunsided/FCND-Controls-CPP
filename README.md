@@ -122,7 +122,7 @@ as a reference when you build out this controller in C++.
    `QuadControlParams.txt`. The default values for these parameters are all too small by a factor
    of somewhere between about 2X and 4X. So if a parameter has a starting value of 12, it will
    likely have a value somewhere between 24 and 48 once it's properly tuned.
-3. **Parameter Ratios**: In this [one-page document](papers/Double_Integrator_Control__Cascaded_P_Controller_Gains_vs_Damping_Ratio.pdf)
+3. **Parameter Ratios**: In this [one-page document](papers/double-integrator-control-gain/paper.pdf)
    ([source](https://www.overleaf.com/read/bgrkghpggnyc#/61023787/))
    you can find a derivation of the ratio of velocity proportional gain to position proportional
    gain for a critically damped double integrator system. The ratio of `kpV / kpP` should be 4.
@@ -149,7 +149,7 @@ To accomplish this, you will:
 If successful, you should see the rotation of the vehicle about roll (omega.x) get controlled to 0
 while other rates remain zero.  Note that the vehicle will keep flying off quite quickly, since the
 angle is not yet being controlled back to 0.  Also note that some overshoot will happen due to motor
-dynamics!.
+dynamics!
 
 If you come back to this step after the next step, you can try tuning just the body rate omega (without
 the outside angle controller) by setting `QuadControlParams.kpBank = 0`.
