@@ -303,7 +303,7 @@ whereas the second drone does.
 
 ### Extra Challenge 1 (Optional)
 
-The Python script `config/traj/MakePeriodicTrajectory.py` was updated to provide
+The Python script [`config/traj/MakePeriodicTrajectory.py`](`config/traj/MakePeriodicTrajectory.py`) was updated to provide
 velocities in addition to positional data by taking a location derivative.
 A new `FigureEightFF.txt` was created (it was basically the same as the originally
 provided one though). 
@@ -318,10 +318,25 @@ This is, in essence, how it looks.
 
 ### Extra Challenge 2 (Optional)
 
-For flying a trajectory, is there a way to provide even more information for even better tracking?
+> For flying a trajectory, is there a way to provide even more information for even better tracking?
+> How about trying to fly this trajectory as quickly as possible (but within following threshold)!
 
-How about trying to fly this trajectory as quickly as possible (but within following threshold)!
+So far, the only feedforward information available in the trajectory files are velocities.
+The implemented controllers are designed to make use of acceleration information as well;
+the acceleration is taken as the second derivate of the positions.
 
+Looking at the trajectory generation code in [`Trajectory.cpp`](src/Trajectory.cpp), we find
+that the trajectory files only list
+
+- `time`,
+- `x`, `y` and `z` position,
+- `x`, `y` and `z` velocities,
+- `yaw`, `pitch` and `roll`, as well as
+- `omega.x`, `omega.y` and `omega.z` (i.e., rotational velocities).
+
+In theory, maximum thrust should be achievable when the drone's up axis points along the trajectory
+to fly. We'd need to take care of not falling to the ground, but the altitude controller should
+be able to fix that.
 
 ## Evaluation
 
