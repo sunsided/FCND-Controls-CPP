@@ -226,13 +226,37 @@ to chaos for me.
 
 ### Non-idealities and robustness (scenario 4)
 
-In this part, we will explore some of the non-idealities and robustness of a controller.  For this
-simulation, we will use `Scenario 4`.  This is a configuration with 3 quads that are all are trying
-to move one meter forward.  However, this time, these quads are all a bit different:
+In `Scenario 4` we can explore some of the non-idealities and properties issues of a controller.
+This is a configuration with 3 quads that are all are trying to move one meter forward.
+However, this time, these quads are all a bit different:
 
- - The green quad has its center of mass shifted back
- - The orange vehicle is an ideal quad
- - The red vehicle is heavier than usual
+- The green quad has its center of mass shifted back
+- The orange vehicle is an ideal quad
+- The red vehicle is heavier than usual.
+
+When running the controllers in the configuration from the previous scenario,
+not everything works as expected (as, funnily enough, can be expected).
+While the red drone immediately decides to say hi to the floor, both the orange
+and green drones fly to about one meter above the reference point.
+
+![](misc/scenario-4-untuned.png)
+
+The original `README.md` stated
+
+> tip: relax the controller
+
+and after tuning the controller gains once more to
+
+- `kpPosXY` = 30 (from 50)
+- `kpPosz` = 20 (from 1)
+- `kpVelXY` = 9 (from 9.3)
+- `kpVelZ` = 9 (from 4)
+
+all but the red drone reached the goal position. The green drone overshoots,
+but quickly corrects its mistake.
+
+![](misc/scenario-4-tuned.png)
+
 
 1. Run your controller & parameter set from Step 3.  Do all the quads seem to be moving OK?
    If not, try to tweak the controller parameters to work for all 3 (tip: relax the controller).
