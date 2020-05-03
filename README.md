@@ -174,6 +174,8 @@ a new animation that would bloat the repo up even more. For the time being, just
 
 ### Position/velocity and yaw angle control (scenario 3)
 
+![](misc/global-down-to-body.png)
+
 Next, you will implement the position, altitude and yaw control for your quad.  For the simulation,
 you will use `Scenario 3`.  This will create 2 identical quads, one offset from its target point
 (but initialized with yaw = 0) and second offset from target point but yaw = 45 degrees.
