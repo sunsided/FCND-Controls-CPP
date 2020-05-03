@@ -166,6 +166,8 @@ As a result, the drone's reaction did resemble a path somewhat like this:
 
 ![](animations/scenario2.gif)
 
+... except that the drone actually drops to the ground.
+
 Note that the animation was provided by the starter code and does not resemble the actual results.
 However, since the GIFs are already in the repo and quite heavy in size, I didn't bother creating
 a new animation that would bloat the repo up even more. For the time being, just take my word for it. 😁
