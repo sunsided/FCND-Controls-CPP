@@ -171,10 +171,14 @@ V3F QuadControl::BodyRateControl(V3F pqrCmd, V3F pqr) {
     const V3F moi { Ixx, Iyy, Izz };
     auto momentCmd = moi * (kpPQR * rateError);
 
-    /*const auto torque = momentCmd.mag();
+#if FUN_AND_PROFIT
+
+    const auto torque = momentCmd.mag();
     if (torque > maxTorque) {
         momentCmd = momentCmd*maxTorque/torque;
-    }*/
+    }
+
+#endif
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
