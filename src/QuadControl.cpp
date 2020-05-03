@@ -12,6 +12,32 @@
 #include <systemlib/param/param.h>
 #endif
 
+
+#if FUN_AND_PROFIT
+
+V3F LimitVectorMagnitude(const V3F &command, const float maximumMagnitude) {
+    // Normalizes a vector command by a given maximum magnitude.
+    const auto magnitude = command.mag();
+    if (magnitude <= maximumMagnitude || maximumMagnitude <= 0.0F) {
+        return command;
+    }
+    return command * maximumMagnitude / magnitude;
+}
+
+#else
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnusedLocalVariable"
+
+V3F LimitVectorMagnitude(const V3F &command, const float maximumMagnitude) {
+    // Everything is as normal as it gets.
+    return command;
+}
+
+#pragma clang diagnostic pop
+
+#endif
+
 void QuadControl::Init() {
     BaseController::Init();
 
@@ -181,14 +207,7 @@ V3F QuadControl::BodyRateControl(V3F pqrCmd, V3F pqr) {
     const V3F moi { Ixx, Iyy, Izz };
     auto momentCmd = moi * (kpPQR * rateError);
 
-#if FUN_AND_PROFIT
-
-    const auto torque = momentCmd.mag();
-    if (torque > maxTorque) {
-        momentCmd = momentCmd*maxTorque/torque;
-    }
-
-#endif
+    momentCmd = LimitVectorMagnitude(momentCmd, maxTorque);
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -274,11 +293,11 @@ float QuadControl::AltitudeControl(float posZCmd, float velZCmd, float posZ, flo
 
     // Position and velocity errors
     const auto z_err     = posZCmd - posZ;      // z position error (for P controller)
-    const auto z_err_dot = velZCmd - velZ;      // z velocity error (for D controller)
+    const auto z_dot_err = velZCmd - velZ;      // z velocity error (for D controller)
 
-    // PD controller
+    // PD controller (with feedforward)
     const auto p_term = kpPosZ * z_err;
-    const auto d_term = kpVelZ * z_err_dot;
+    const auto d_term = kpVelZ * z_dot_err;
     const auto z_dot_dot_c = p_term + d_term + accelZCmd;
 
     // Convert from world frame to body frame.
@@ -321,11 +340,32 @@ V3F QuadControl::LateralPositionControl(V3F posCmd, V3F velCmd, V3F pos, V3F vel
     // we initialize the returned desired acceleration to the feed-forward value.
     // Make sure to _add_, not simply replace, the result of your controller
     // to this variable
-    V3F accelCmd = accelCmdFF;
+    auto accelCmd = accelCmdFF;
 
     ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+    // Apply range limiting.
+    vel = LimitVectorMagnitude(vel, maxSpeedXY);
 
+    // Note that for lateral position control, we keep our fingers away from
+    // the z position - hence a zero gain for it.
+    const V3F kpP { kpPosXY, kpPosXY, 0.f };
+    const V3F kdV { kpVelXY, kpVelXY, 0.f };
+
+    // Position and velocity errors
+    const auto xy_err = posCmd - pos;
+    const auto xy_dot_err =  velCmd - vel;
+
+    // PD controller
+    const auto p_term = kpP * xy_err;
+    const auto d_term = kdV * xy_dot_err;
+
+    // PD controller (with feedforward)
+    // Note that the feedforward term is already included in accelCmd defined above.
+    accelCmd += p_term + d_term;
+
+    // Again, apply saturation.
+    accelCmd = LimitVectorMagnitude(accelCmd, maxAccelXY);
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
