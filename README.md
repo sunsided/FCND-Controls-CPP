@@ -248,7 +248,7 @@ The original `README.md` stated
 and after tuning the controller gains once more to
 
 - `kpPosXY` = 30 (from 50)
-- `kpPosz` = 20 (from 1)
+- `kpPosZ` = 20 (from 1)
 - `kpVelXY` = 9 (from 9.3)
 - `kpVelZ` = 9 (from 4)
 
@@ -257,14 +257,18 @@ but quickly corrects its mistake.
 
 ![](misc/scenario-4-tuned.png)
 
+Since the red drone has a higher mass than anticipated, the altitude controller
+exhibits a systematic bias that cannot be governed by the proportional part
+(nor by the differential part, for that matter).
 
-1. Run your controller & parameter set from Step 3.  Do all the quads seem to be moving OK?
-   If not, try to tweak the controller parameters to work for all 3 (tip: relax the controller).
-2. Edit `AltitudeControl()` to add basic integral control to help with the different-mass vehicle.
-3. Tune the integral control, and other control parameters until all the quads successfully move properly.
-   Your drones' motion should look like this:
+Adding an integrator term to build a feed-forward PID controller for the attitude
+solved this problem, but not before changing the controller once more:
 
-![](animations/scenario4.gif)
+- `kpPosXY` = 29 (from 30)
+- `kpPosZ` = 40 (from 20)
+- `KiPosZ` = 40 (from 20)
+
+![](misc/scenario-4-integrated.webp)
 
 ### Tracking trajectories
 

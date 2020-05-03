@@ -311,10 +311,14 @@ float QuadControl::AltitudeControl(float posZCmd, float velZCmd, float posZ, flo
     const auto z_err     = posZCmd - posZ;      // z position error (for P controller)
     const auto z_dot_err = velZCmd - velZ;      // z velocity error (for D controller)
 
-    // PD controller (with feedforward)
+    // Integrate the error for the I controller.
+    integratedAltitudeError += z_err * dt;
+
+    // PID controller (with feedforward)
     const auto p_term = kpPosZ * z_err;
     const auto d_term = kpVelZ * z_dot_err;
-    const auto z_dot_dot_c = p_term + d_term + accelZCmd;
+    const auto i_term = KiPosZ * integratedAltitudeError;
+    const auto z_dot_dot_c = p_term + i_term + d_term + accelZCmd;
 
     // Convert from world frame to body frame.
     const auto b_z = R(2, 2);
