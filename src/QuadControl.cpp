@@ -44,6 +44,8 @@ void QuadControl::Init() {
 
     minMotorThrust = config->Get(_config + ".minMotorThrust", 0);
     maxMotorThrust = config->Get(_config + ".maxMotorThrust", 100);
+
+    maxTorque = config->Get(_config + ".maxTorque", 1);
 #else
     // load params from PX4 parameter system
     //TODO
@@ -68,10 +70,102 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
 
     ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
-    cmd.desiredThrustsN[0] = mass * 9.81f / 4.f; // front left
-    cmd.desiredThrustsN[1] = mass * 9.81f / 4.f; // front right
-    cmd.desiredThrustsN[2] = mass * 9.81f / 4.f; // rear left
-    cmd.desiredThrustsN[3] = mass * 9.81f / 4.f; // rear right
+    // The goal of this method is to take a total thrust F and
+    // distribute it across all rotors, such that the specified rotational
+    // moment is obtained.
+    const auto F = collThrustCmd; // F_1 + F_1 + F_2 + F_3
+
+    // Perpendicular distance (d_perp, l):
+    // The rotors are assembled L units away from the center of mass,
+    // at a 45° angle to the body frame coordinate system.
+    // Thus, the perpendicular distance l = L * cos(45°).
+    // Since cos(45°) = 1/√2, we have
+    const auto d_perp = L * M_SQRT1_2;
+
+    // About the maths ...
+    //
+    // In general, we have
+    //   tau = k_m * omega^2
+    //   F = tau / l
+    //
+    // From the forums we've got
+    //   kappa = k_f / k_m          <- TODO: verify this
+    //
+    // From the lectures, we have
+    //   u_p_bar = tau_x / Ixx
+    //   u_q_bar = tau_y / Iyy
+    //   u_r_bar = tau_z / Izz
+    //
+    // and
+    //   c_bar = F / k_f
+    //   p_bar = (Ixx u_p_bar) / (k_f * l) = tau_x / (k_f * l)
+    //   q_bar = (Iyy u_q_bar) / (k_f * l) = tau_y / (k_f * l)
+    //   r_bar = (Izz u_z_bar) / (k_m)     = tau_z / k_m
+    //
+    // From the exercises we have
+    //   omega_4^2 = 1/4 (c_bar + p_bar - q_bar - r_bar)
+    //   omega_3^2 = 1/2 (c_bar - q_bar) - omega_4^2
+    //   omega_2^2 = 1/2 (c_bar - p_bar) - omega_3^2
+    //   omega_1^2 = c - omega_2^2 - omega_3^2 - omega_4^2
+    //
+    // Expanding the equations gives
+    //   omega_2^2 = 1/4 (c_bar + p_bar + q_bar + r_bar)
+    //   omega_2^2 = 1/4 (c_bar - p_bar + q_bar - r_bar)
+    //   omega_3^2 = 1/4 (c_bar - p_bar - q_bar + r_bar)
+    //   omega_4^2 = 1/4 (c_bar - p_bar + q_bar - r_bar)
+    //
+    // Since tau = k_m * omega^2 and F = tau / l, we have
+    //
+    //   | F1 |           k_m    | 1  1  1  1 |   | F     /  k_f      |
+    //   | F2 | = 0.25 * ----- * | 1 -1  1 -1 | * | tau_x / (k_f * l) |
+    //   | F3 |            l     | 1 -1 -1  1 |   | tau_y / (k_f * l) |
+    //   | F4 |                  | 1 -1  1 -1 |   | tau_z /  k_m      |
+    //
+    // By realizing that 1/kappa = k_m / k_f, this gives
+    //
+    //   | F1 |          1   | 1  1  1  1 |   | F     /  kappa      |
+    //   | F2 | = 0.25 * - * | 1 -1  1 -1 | * | tau_x / (kappa * l) |
+    //   | F3 |          l   | 1 -1 -1  1 |   | tau_y / (kappa * l) |
+    //   | F4 |              | 1 -1  1 -1 |   | tau_z               |
+
+    const auto F_bar = F / kappa;
+    const auto tau_x_bar = momentCmd.x / (kappa * d_perp);
+    const auto tau_y_bar = momentCmd.y / (kappa * d_perp);
+    const auto tau_z_bar = momentCmd.z / d_perp;
+
+    const auto factor = 0.25 / d_perp;
+    const auto F1 = factor * (F_bar + tau_x_bar + tau_y_bar + tau_z_bar);
+    const auto F2 = factor * (F_bar - tau_x_bar - tau_y_bar + tau_z_bar);
+    const auto F3 = factor * (F_bar - tau_x_bar + tau_y_bar - tau_z_bar);
+    const auto F4 = factor * (F_bar + tau_x_bar - tau_y_bar - tau_z_bar);
+
+    // Note that the order of rotors is different from the lectures,
+    // which is why the F3 and F4 values were swapped below.
+    cmd.desiredThrustsN[0] = CONSTRAIN(F1, minMotorThrust, maxMotorThrust); // front left
+    cmd.desiredThrustsN[1] = CONSTRAIN(F2, minMotorThrust, maxMotorThrust); // front right
+    cmd.desiredThrustsN[2] = CONSTRAIN(F4, minMotorThrust, maxMotorThrust); // rear left
+    cmd.desiredThrustsN[3] = CONSTRAIN(F3, minMotorThrust, maxMotorThrust); // rear right
+
+#if 1 == 0
+
+    float l = L / sqrt(2.F);
+
+    float Ft = collThrustCmd;
+    float Fp = momentCmd.x / l;
+    float Fq = momentCmd.y / l;
+    float Fr = momentCmd.z / kappa;
+
+    float F1 = (Ft + Fp + Fq - Fr) / 4;
+    float F2 = F1 - (Fp - Fr) / 2;
+    float F4 = (Ft - Fp) / 2 - F2;
+    float F3 = Ft - F1 - F2 - F4;
+
+    cmd.desiredThrustsN[0] = CONSTRAIN(F1, minMotorThrust, maxMotorThrust); // front left
+    cmd.desiredThrustsN[1] = CONSTRAIN(F2, minMotorThrust, maxMotorThrust); // front right
+    cmd.desiredThrustsN[2] = CONSTRAIN(F3, minMotorThrust, maxMotorThrust); // rear left
+    cmd.desiredThrustsN[3] = CONSTRAIN(F4, minMotorThrust, maxMotorThrust); // rear right
+
+#endif
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -91,11 +185,17 @@ V3F QuadControl::BodyRateControl(V3F pqrCmd, V3F pqr) {
     //  - you'll need parameters for moments of inertia Ixx, Iyy, Izz
     //  - you'll also need the gain parameter kpPQR (it's a V3F)
 
-    V3F momentCmd;
-
     ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+    const auto rateError = pqrCmd - pqr;
 
+    const V3F moi { Ixx, Iyy, Izz };
+    auto momentCmd = moi * (kpPQR * rateError);
+
+    /*const auto torque = momentCmd.mag();
+    if (torque > maxTorque) {
+        momentCmd = momentCmd*maxTorque/torque;
+    }*/
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -124,8 +224,6 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
     Mat3x3F R = attitude.RotationMatrix_IwrtB();
 
     ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-
-
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
