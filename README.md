@@ -1,5 +1,7 @@
 # 3D Quadrocopter Control
 
+![](misc/controllers.png)
+
 ### Development environment
 
 #### CMake on Linux
@@ -50,7 +52,6 @@ You will also be using the simulator to fly some difference trajectories to test
 implementation of your controller. These trajectories, along with supporting code, are found in the `traj`
 directory of the repo.
 
-
 ### The Simulator
 
 In the simulator window itself, you can right click the window to select between a set of different
@@ -83,7 +84,6 @@ external forces on your drone to see how your controllers reacts!
 - C - clear all graphs
 - R - reset simulation
 - Space - pause simulation
-
 
 ### Testing it Out
 
