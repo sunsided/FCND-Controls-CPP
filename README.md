@@ -174,14 +174,20 @@ a new animation that would bloat the repo up even more. For the time being, just
 
 ### Position/velocity and yaw angle control (scenario 3)
 
+Next, the altitude, position and yaw control was implemented. This corresponds to `Scenario 3`
+in the simulation. In there, two identical quads are created at some offset from their target
+points. In addition, one of the drones is initialized with a yaw of 45 degrees. 
+
+One of the implications here is that we need to convert information in global frame (such as the
+altitude) into thrust in the body frame. The following rotation relation came in handy:
+
 ![](misc/global-down-to-body.png)
 
-Next, you will implement the position, altitude and yaw control for your quad.  For the simulation,
-you will use `Scenario 3`.  This will create 2 identical quads, one offset from its target point
-(but initialized with yaw = 0) and second offset from target point but yaw = 45 degrees.
+- The `AltitudeControl()` method was implemented first using a PD control scheme.
+
+---
 
  - implement the code in the function `LateralPositionControl()`
- - implement the code in the function `AltitudeControl()`
  - tune parameters `kpPosZ` and `kpPosZ`
  - tune parameters `kpVelXY` and `kpVelZ`
 
