@@ -294,23 +294,24 @@ off we pop:
 
 After that, the yellow drone followed the path reasonably well
 (within bounds, that is) whereas the red drone constantly missed
-the goal positions by overshooting.
+the goal positions by overshooting. The reason should be that the first drone does
+not receive any feedforward information (specifically, the target velocities are unknown),
+whereas the second drone does.
 
 ![](misc/paths.png)
  
 
 ### Extra Challenge 1 (Optional)
 
-You will notice that initially these two trajectories are the same. Let's work on improving some
-performance of the trajectory itself.
+The Python script `config/traj/MakePeriodicTrajectory.py` was updated to provide
+velocities in addition to positional data by taking a location derivative.
+A new `FigureEightFF.txt` was created (it was basically the same as the originally
+provided one though). 
 
-1. Inspect the python script `traj/MakePeriodicTrajectory.py`.  Can you figure out a way to generate
-a trajectory that has velocity (not just position) information?
+As mentioned above, providing velocity information allows them to be used as feed-forward
+terms, which in turn (drastically) improves the controller performance.
 
-2. Generate a new `FigureEightFF.txt` that has velocity terms
-Did the velocity-specified trajectory make a difference? Why?
-
-With the two different trajectories, your drones' motions should look like this:
+This is, in essence, how it looks. 
 
 ![](animations/scenario5.gif)
 
