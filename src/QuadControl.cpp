@@ -38,6 +38,22 @@ V3F LimitVectorMagnitude(const V3F &command, const float maximumMagnitude) {
 
 #endif
 
+float WrapAngleRadians(float angle) {
+    // Ensures an angle is within -pi .. pi range.
+
+    static const auto pi = static_cast<float>(M_PI);
+    static const auto pi2 = 2.0F * static_cast<float>(M_PI);
+
+    while (angle > pi) {
+        angle -= -pi2;
+    }
+    while (angle < -pi) {
+        angle += pi2;
+    }
+
+    return angle;
+}
+
 void QuadControl::Init() {
     BaseController::Init();
 
@@ -387,6 +403,8 @@ float QuadControl::YawControl(float yawCmd, float yaw) {
     float yawRateCmd = 0;
     ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+    const float yaw_err = WrapAngleRadians(yawCmd - yaw);
+    yawRateCmd = kpYaw * yaw_err;
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
