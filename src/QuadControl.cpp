@@ -266,12 +266,29 @@ float QuadControl::AltitudeControl(float posZCmd, float velZCmd, float posZ, flo
     //  - make sure to return a force, not an acceleration
     //  - remember that for an upright quad in NED, thrust should be HIGHER if the desired Z acceleration is LOWER
 
-    Mat3x3F R = attitude.RotationMatrix_IwrtB();
-    float thrust = 0;
+    auto R = attitude.RotationMatrix_IwrtB();
 
     ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+    const auto gravity = static_cast<float>(CONST_GRAVITY);
 
+    // Position and velocity errors
+    const auto z_err     = posZCmd - posZ;      // z position error (for P controller)
+    const auto z_err_dot = velZCmd - velZ;      // z velocity error (for D controller)
+
+    // PD controller
+    const auto p_term = kpPosZ * z_err;
+    const auto d_term = kpVelZ * z_err_dot;
+    const auto z_dot_dot_c = p_term + d_term + accelZCmd;
+
+    // Convert from world frame to body frame.
+    const auto b_z = R(2, 2);
+    const auto c = (z_dot_dot_c - gravity) / b_z;
+
+    // Limiting for fun and profit.
+    const auto ascLimit = maxAscentRate / dt;
+    const auto descLimit = maxDescentRate / dt;
+    const auto thrust = -mass * CONSTRAIN(c, -descLimit, ascLimit);
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
