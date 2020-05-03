@@ -82,7 +82,7 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     // moment is obtained.
     const auto F = collThrustCmd; // F_1 + F_1 + F_2 + F_3
 
-#if 0
+#if WE_TRUST_OUR_OWN_MATH // ... which we don't ...
 
     // About the maths ...
     //
@@ -135,18 +135,13 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     const auto tau_y_bar = momentCmd.y / (kappa * d_perp);
     const auto tau_z_bar = -momentCmd.z / d_perp;
 
+    // Note that the order of rotors is different from the lectures,
+    // which is why the F3 and F4 values were swapped below.
     const auto factor = 0.25 / d_perp;
     const auto F1 = factor * (F_bar + tau_x_bar + tau_y_bar + tau_z_bar);
     const auto F2 = factor * (F_bar - tau_x_bar - tau_y_bar + tau_z_bar);
-    const auto F3 = factor * (F_bar - tau_x_bar + tau_y_bar - tau_z_bar);
-    const auto F4 = factor * (F_bar + tau_x_bar - tau_y_bar - tau_z_bar);
-
-    // Note that the order of rotors is different from the lectures,
-    // which is why the F3 and F4 values were swapped below.
-    cmd.desiredThrustsN[0] = CONSTRAIN(F1, minMotorThrust, maxMotorThrust); // front left
-    cmd.desiredThrustsN[1] = CONSTRAIN(F2, minMotorThrust, maxMotorThrust); // front right
-    cmd.desiredThrustsN[2] = CONSTRAIN(F4, minMotorThrust, maxMotorThrust); // rear left
-    cmd.desiredThrustsN[3] = CONSTRAIN(F3, minMotorThrust, maxMotorThrust); // rear right
+    const auto F4 = factor * (F_bar - tau_x_bar + tau_y_bar - tau_z_bar);  // <-- F4
+    const auto F3 = factor * (F_bar + tau_x_bar - tau_y_bar - tau_z_bar);  // <-- F3
 
 #else
 
@@ -182,17 +177,25 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     const auto F3 = 0.25 * (c_bar + p_bar - q_bar - r_bar);
     const auto F4 = 0.25 * (c_bar - p_bar - q_bar + r_bar);
 
+#endif
+
+    // It appears that we don't have to concern ourselves with the limiting the thrust range here.
+    // Concretely, if we do, this will make the simulator goals harder to pass and requires extremely
+    // high controller gains.
+
+#ifndef LIMIT_THRUST_RANGE
+
     cmd.desiredThrustsN[0] = F1; // front left
     cmd.desiredThrustsN[1] = F2; // front right
     cmd.desiredThrustsN[2] = F3; // rear left
     cmd.desiredThrustsN[3] = F4; // rear right
 
-    // It appears we don't have to concern ourselves with the details
-    // of limiting the thrust range.
-    // cmd.desiredThrustsN[0] = CONSTRAIN(F1, minMotorThrust, maxMotorThrust); // front left
-    // cmd.desiredThrustsN[1] = CONSTRAIN(F2, minMotorThrust, maxMotorThrust); // front right
-    // cmd.desiredThrustsN[2] = CONSTRAIN(F3, minMotorThrust, maxMotorThrust); // rear left
-    // cmd.desiredThrustsN[3] = CONSTRAIN(F4, minMotorThrust, maxMotorThrust); // rear right
+#else
+
+    cmd.desiredThrustsN[0] = CONSTRAIN(F1, minMotorThrust, maxMotorThrust); // front left
+    cmd.desiredThrustsN[1] = CONSTRAIN(F2, minMotorThrust, maxMotorThrust); // front right
+    cmd.desiredThrustsN[2] = CONSTRAIN(F3, minMotorThrust, maxMotorThrust); // rear left
+    cmd.desiredThrustsN[3] = CONSTRAIN(F4, minMotorThrust, maxMotorThrust); // rear right
 
 #endif
 
