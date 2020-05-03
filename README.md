@@ -192,29 +192,37 @@ The controller parameters had to be re-adjusted and now are
 
 - `kpPQR` = 85, 85, 5
 - `kpBank` = 20
-- `kpVelXY` = 10
-- `kpposXY` = 50
+- `kpVelXY` = 9.3
+- `kpPosXY` = 50
 
-In this configuration, the goal position is reached after 0.375 seconds. Without
+In this configuration, the goal position is reached after 0.360 seconds. Without
 yaw control, one of the two drones does have a bad attitude.
 
----
+To mitigate, yaw control was added next (`YawControl()`) and the according controller
+gains set to
 
-If successful, the quads should be going to their destination points and tracking error should be
-going down (as shown below). However, one quad remains rotated in yaw.
+- `kpYaw` = 3
+- `kpPQR` = 85, 85, 10
 
- - implement the code in the function `YawControl()`
- - tune parameters `kpYaw` and the 3rd (z) component of `kpPQR`
+The drones now both reach their goals and have zero yaw.
+The following note of the original `README.md` is kept here for future reference:
 
-Tune position control for settling time. Don’t try to tune yaw control too tightly, as yaw control
-requires a lot of control authority from a quadcopter and can really affect other degrees of freedom.
-This is why you often see quadcopters with tilted motors, better yaw authority!
+> Tune position control for settling time. Don’t try to tune yaw control too tightly,
+> as yaw control requires a lot of control authority from a quadcopter and can really
+> affect other degrees of freedom. This is why you often see quadcopters with tilted
+> motors: better yaw authority!
+
+Another one regarding the controller gain magnitudes: 
+
+> **Hint:**  For a second order system, such as the one for this quadcopter,
+> the velocity gain (`kpVelXY` and `kpVelZ`) should be at least ~3-4 times greater
+> than the respective position gain (`kpPosXY` and `kpPosZ`).
+
+Interestingly, setting the velocity gain higher than the position gain led
+to chaos for me.
 
 ![](animations/scenario3.gif)
 
-**Hint:**  For a second order system, such as the one for this quadcopter, the velocity gain
-(`kpVelXY` and `kpVelZ`) should be at least ~3-4 times greater than the respective position gain
-(`kpPosXY` and `kpPosZ`).
 
 ### Non-idealities and robustness (scenario 4)
 
