@@ -151,9 +151,9 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
 #else
 
     // Okay, so the above is apparently incorrect.
-    // After consulting with the internet, this seems to be the _correct_
+    // After consulting with the internet, the following seems to be the "correct"
     // solution. I do have trouble getting there though.
-    // In the above "solution", we have
+    // In the above approach, we have
     //
     //   c_bar = F / k_f
     //   p_bar = (Ixx u_p_bar) / (k_f * l) = tau_x / (k_f * l)
@@ -168,6 +168,9 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     //   r_bar' = tau_z * kf / k_m
     //
     // Now r_bar' is a problem, because it already contains Kappa.
+    //
+    // I mean, sure. If kappa is torque per force, then we could divide
+    // a torque by kappa and get a thrust.
 
     const auto c_bar = F;
     const auto p_bar =  momentCmd.x / d_perp;
@@ -179,13 +182,13 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     const auto F3 = 0.25 * (c_bar + p_bar - q_bar - r_bar);
     const auto F4 = 0.25 * (c_bar - p_bar - q_bar + r_bar);
 
-    // It appears we don't have to concern ourselves with the details
-    // of limiting the thrust range.
     cmd.desiredThrustsN[0] = F1; // front left
     cmd.desiredThrustsN[1] = F2; // front right
     cmd.desiredThrustsN[2] = F3; // rear left
     cmd.desiredThrustsN[3] = F4; // rear right
 
+    // It appears we don't have to concern ourselves with the details
+    // of limiting the thrust range.
     // cmd.desiredThrustsN[0] = CONSTRAIN(F1, minMotorThrust, maxMotorThrust); // front left
     // cmd.desiredThrustsN[1] = CONSTRAIN(F2, minMotorThrust, maxMotorThrust); // front right
     // cmd.desiredThrustsN[2] = CONSTRAIN(F3, minMotorThrust, maxMotorThrust); // rear left
