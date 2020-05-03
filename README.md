@@ -272,18 +272,32 @@ solved this problem, but not before changing the controller once more:
 
 ### Tracking trajectories
 
-Now that we have all the working parts of a controller, you will put it all together and test it's
-performance once again on a trajectory.  For this simulation, you will use `Scenario 5`.
-This scenario has two quadcopters:
+With all parts assembled, the performance of the controller(s) can be tested on
+simulation `Scenario 5`, where two drones are required to fly a predefined trajectory:
  
- - the orange one is following `traj/FigureEight.txt`
- - the other one is following `traj/FigureEightFF.txt` - for now this is the same trajectory.
+- the orange one is following `traj/FigureEight.txt`
+- the other one is following `traj/FigureEightFF.txt` - for now this is the same trajectory.
+
+Out of the box, the drones perform pretty creatively:
+
+![](misc/creative-dance.png)
+
+This reminded me that the controller gains weren't tuned in quite a while, so
+off we pop:
+
+- `kpPosXY` = 40 (from 29)
+- `kpPosZ` = 25 (from 40)
+- `KiPosZ` = 40 (from 45)
+- `plVelXY` = 12 (from 13)
+- `kpVelZ` = 12 (from 10)
+- `kpBank` = 12 (from 20)
+
+After that, the yellow drone followed the path reasonably well
+(within bounds, that is) whereas the red drone constantly missed
+the goal positions by overshooting.
+
+![](misc/paths.png)
  
-For those interested in seeing how you might be able to improve the performance of your drone by
-adjusting how the trajectory is defined, check out **Extra Challenge 1** below!
-
-How well is your drone able to follow the trajectory?  It is able to hold to the path fairly well?
-
 
 ### Extra Challenge 1 (Optional)
 
