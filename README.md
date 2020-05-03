@@ -285,12 +285,12 @@ Out of the box, the drones perform pretty creatively:
 This reminded me that the controller gains weren't tuned in quite a while, so
 off we pop:
 
-- `kpPosXY` = 40 (from 29)
+- `kpPosXY` = 35 (from 29)
 - `kpPosZ` = 25 (from 40)
-- `KiPosZ` = 40 (from 45)
+- `KiPosZ` = 42 (from 45)
 - `plVelXY` = 12 (from 13)
-- `kpVelZ` = 12 (from 10)
-- `kpBank` = 12 (from 20)
+- `kpVelZ` = 15 (from 10)
+- `kpBank` = 13 (from 20)
 
 After that, the yellow drone followed the path reasonably well
 (within bounds, that is) whereas the red drone constantly missed

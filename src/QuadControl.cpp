@@ -12,8 +12,9 @@
 #include <systemlib/param/param.h>
 #endif
 
+#define FUN_AND_PROFIT
 
-#if FUN_AND_PROFIT
+#ifdef FUN_AND_PROFIT
 
 V3F LimitVectorMagnitude(const V3F &command, const float maximumMagnitude) {
     // Normalizes a vector command by a given maximum magnitude.
