@@ -46,7 +46,7 @@ float WrapAngleRadians(float angle) {
     static const auto pi2 = 2.0F * static_cast<float>(M_PI);
 
     while (angle > pi) {
-        angle -= -pi2;
+        angle -= pi2;
     }
     while (angle < -pi) {
         angle += pi2;
@@ -269,9 +269,13 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
     const auto b_x = R(0,2);
     const auto b_y = R(1,2);
 
+    // Error terms
+    const auto b_x_c_error = b_x_c_target - b_x;
+    const auto b_y_c_error = b_y_c_target - b_y;
+
     // P controller for roll and pitch rates.
-    const auto b_x_commanded_dot = kpBank * (b_x_c_target - b_x);
-    const auto b_y_commanded_dot = kpBank * (b_y_c_target - b_y);
+    const auto b_x_commanded_dot = kpBank * b_x_c_error;
+    const auto b_y_commanded_dot = kpBank * b_y_c_error;
 
     // Convert to rates in the body frame.
     pqrCmd.x = (R(1,0) * b_x_commanded_dot - R(0,0) * b_y_commanded_dot) / R(2,2);
