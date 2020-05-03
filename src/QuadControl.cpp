@@ -80,104 +80,61 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     // The goal of this method is to take a total thrust F and
     // distribute it across all rotors, such that the specified rotational
     // moment is obtained.
-    const auto F = collThrustCmd; // F_1 + F_1 + F_2 + F_3
+    // Note that collThrustCmd = F_1 + F_1 + F_2 + F_3
 
-#if WE_TRUST_OUR_OWN_MATH // ... which we don't ...
+    // The core problem with this task is that the code doesn't give
+    // the thrust and torque coefficients described in the lectures, but herein lies the
+    // core realization required to solve this problem:
+    //
+    // We know that
+    //   - F   = kf * omega^2
+    //   - tau = km * omega^2
+    //
+    // Thus thrust and torque are coupled by the angular velocity.
+    // Equating both gives
+    //   - F / kf  = tau / km
+    //   - tau / F = km / kf
+    //
+    // From the source code (BaseController.h) and the physical parameters (QuadPhysicalParams.txt)
+    // we know that kappa is "torque (Nm) produced by motor per N of thrust produced"
+    // and specifically, torque = kappa * thrust. This
+    //   - tau = kappa * F
+    //
+    // The rest of the problem is pretty straightforward, we have:
+    //   - F =  F1 + F2 + F3 + F3
+    //
+    // and for the roll and pitch moments:
+    //   - tau_x = (F1 - F2 - F3 + F4) * l
+    //   - tau_y = (F1 + F2 - F3 - F4) * l
+    //
+    // The yaw moment is a result of the (signed!) moments induced by each motor
+    // (do note that the exercise notebook to the lesson ignores the signs, which leads to extra confusion):
+    //   - tau_z = tau_1 - tau_2 + tau_3 - tau_4
+    //
+    // Applying the kappa trick mentioned above, we find that
+    //   - tau_z = (F1 - F2 + F3 - F4) * kappa
+    //
+    // At this point, we have four unknowns F1, F2, F3, F4, as well as four
+    // knowns F, tau_x, tau_y, tau_z. If we build a linear system and solve for F1 .. F4,
+    // we find that
+    //   - F1 = 1/4 * (F + tau_x/l + tau_y/l + tau_z/kappa)
+    //   - F2 = 1/4 * (F - tau_x/l + tau_y/l - tau_z/kappa)
+    //   - F3 = 1/4 * (F - tau_x/l - tau_y/l + tau_z/kappa)
+    //   - F4 = 1/4 * (F + tau_x/l - tau_y/l - tau_z/kappa)
+    //
+    // A final twist is that the rotor numbering from the notebooks differ
+    // from the one in the simulator; specifically, rotor 3 and 4 are swapped.
+    // In the code below, the assignments are swapped accordingly.
 
-    // About the maths ...
-    //
-    // In general, we have
-    //   tau = k_m * omega^2
-    //   F = tau / l
-    //
-    // From the forums we've got
-    //   kappa = k_f / k_m          <- TODO: verify this
-    //
-    // From the lectures, we have
-    //   u_p_bar = tau_x / Ixx
-    //   u_q_bar = tau_y / Iyy
-    //   u_r_bar = tau_z / Izz
-    //
-    // and
-    //   c_bar = F / k_f
-    //   p_bar = (Ixx u_p_bar) / (k_f * l) = tau_x / (k_f * l)
-    //   q_bar = (Iyy u_q_bar) / (k_f * l) = tau_y / (k_f * l)
-    //   r_bar = (Izz u_z_bar) / (k_m)     = tau_z / k_m
-    //
-    // From the exercises we have
-    //   omega_4^2 = 1/4 (c_bar + p_bar - q_bar - r_bar)
-    //   omega_3^2 = 1/2 (c_bar - q_bar) - omega_4^2
-    //   omega_2^2 = 1/2 (c_bar - p_bar) - omega_3^2
-    //   omega_1^2 = c - omega_2^2 - omega_3^2 - omega_4^2
-    //
-    // Expanding the equations gives
-    //   omega_1^2 = 1/4 (c_bar + p_bar + q_bar + r_bar)
-    //   omega_2^2 = 1/4 (c_bar - p_bar + q_bar - r_bar)
-    //   omega_3^2 = 1/4 (c_bar - p_bar - q_bar + r_bar)
-    //   omega_4^2 = 1/4 (c_bar - p_bar + q_bar - r_bar)
-    //
-    // Since tau = k_m * omega^2 and F = tau / l, we have
-    //
-    //   | F1 |           k_m    | 1  1  1  1 |   | F     /  k_f      |
-    //   | F2 | = 0.25 * ----- * | 1 -1  1 -1 | * | tau_x / (k_f * l) |
-    //   | F3 |            l     | 1 -1 -1  1 |   | tau_y / (k_f * l) |
-    //   | F4 |                  | 1 -1  1 -1 |   | tau_z /  k_m      |
-    //
-    // By realizing that 1/kappa = k_m / k_f, this gives
-    //
-    //   | F1 |          1   | 1  1  1  1 |   | F     /  kappa      |
-    //   | F2 | = 0.25 * - * | 1 -1  1 -1 | * | tau_x / (kappa * l) |
-    //   | F3 |          l   | 1 -1 -1  1 |   | tau_y / (kappa * l) |
-    //   | F4 |              | 1 -1  1 -1 |   | tau_z               |
+    const auto Fc =  collThrustCmd;             // force from collective thrust
+    const auto Fp =  momentCmd.x / d_perp;      // force from pitch moment
+    const auto Fq =  momentCmd.y / d_perp;      // force from roll moment
+    const auto Fr = -momentCmd.z / kappa;       // force from yaw moment
 
-    const auto F_bar = F / kappa;
-    const auto tau_x_bar = momentCmd.x / (kappa * d_perp);
-    const auto tau_y_bar = momentCmd.y / (kappa * d_perp);
-    const auto tau_z_bar = -momentCmd.z / d_perp;
-
-    // Note that the order of rotors is different from the lectures,
-    // which is why the F3 and F4 values were swapped below.
-    const auto factor = 0.25 / d_perp;
-    const auto F1 = factor * (F_bar + tau_x_bar + tau_y_bar + tau_z_bar);
-    const auto F2 = factor * (F_bar - tau_x_bar - tau_y_bar + tau_z_bar);
-    const auto F4 = factor * (F_bar - tau_x_bar + tau_y_bar - tau_z_bar);  // <-- F4
-    const auto F3 = factor * (F_bar + tau_x_bar - tau_y_bar - tau_z_bar);  // <-- F3
-
-#else
-
-    // Okay, so the above is apparently incorrect.
-    // After consulting with the internet, the following seems to be the "correct"
-    // solution. I do have trouble getting there though.
-    // In the above approach, we have
-    //
-    //   c_bar = F / k_f
-    //   p_bar = (Ixx u_p_bar) / (k_f * l) = tau_x / (k_f * l)
-    //   q_bar = (Iyy u_q_bar) / (k_f * l) = tau_y / (k_f * l)
-    //   r_bar = (Izz u_z_bar) / (k_m)     = tau_z / k_m
-    //
-    // Clearly, if we multiply all values with k_f, we end up with
-    //
-    //   c_bar' = F
-    //   p_bar' = tau_x / l
-    //   q_bar' = tau_y / l
-    //   r_bar' = tau_z * kf / k_m
-    //
-    // Now r_bar' is a problem, because it already contains Kappa.
-    //
-    // I mean, sure. If kappa is torque per force, then we could divide
-    // a torque by kappa and get a thrust.
-
-    const auto c_bar = F;
-    const auto p_bar =  momentCmd.x / d_perp;
-    const auto q_bar =  momentCmd.y / d_perp;
-    const auto r_bar = -momentCmd.z / kappa;
-
-    const auto F1 = 0.25 * (c_bar + p_bar + q_bar + r_bar);
-    const auto F2 = 0.25 * (c_bar - p_bar + q_bar - r_bar);
-    const auto F3 = 0.25 * (c_bar + p_bar - q_bar - r_bar);
-    const auto F4 = 0.25 * (c_bar - p_bar - q_bar + r_bar);
-
-#endif
+    const auto F1 = 0.25 * (Fc + Fp + Fq + Fr);
+    const auto F2 = 0.25 * (Fc - Fp + Fq - Fr);
+    const auto F3 = 0.25 * (Fc + Fp - Fq - Fr);
+    const auto F4 = 0.25 * (Fc - Fp - Fq + Fr);
 
     // It appears that we don't have to concern ourselves with the limiting the thrust range here.
     // Concretely, if we do, this will make the simulator goals harder to pass and requires extremely
