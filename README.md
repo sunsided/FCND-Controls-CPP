@@ -134,38 +134,41 @@ Dronecode provides some guidelines on PID tuning at
 
 ### Body rate and roll/pitch control (scenario 2)
 
-First, you will implement the body rate and roll / pitch control.  For the simulation, you will use `Scenario 2`.
-In this scenario, you will see a quad above the origin.  It is created with a small initial rotation speed about its
-roll axis.  Your controller will need to stabilize the rotational motion and bring the vehicle back to level attitude.
+First, body rate and roll/pitch control was implemented; for this, `Scenario 2` of the simulation was used.
+In this scenario, the quad is created above the origin using a small initial rotation speed about its
+roll axis.
 
-To accomplish this, you will:
+1. Body rate control
 
-1. Implement body rate control
+First, the controller needs to stabilize the rotational motion and bring the vehicle back to level attitude.
+For this, the `GenerateMotorCommands()` and `BodyRateControl()` methods were implemented first;
+the `kpPQR` controller gain was tuned accordingly to stabilize the rotational motion.
 
-- implement the code in the function `GenerateMotorCommands()`
-- implement the code in the function `BodyRateControl()`
-- Tune `kpPQR` in `QuadControlParams.txt` to get the vehicle to stop spinning quickly but not overshoot
+As a result, the roll rotation around the drone's x axis (`omega.x`) is controlled to 0 in
+about 0.065 seconds. Since the roll angle itself is not controlled yet, the drone will still
+stay at an angle and thus will slightly fly sideways. The controller does overshoot about 10 degrees
+due to motor dynamics.
 
-If successful, you should see the rotation of the vehicle about roll (omega.x) get controlled to 0
-while other rates remain zero.  Note that the vehicle will keep flying off quite quickly, since the
-angle is not yet being controlled back to 0.  Also note that some overshoot will happen due to motor
-dynamics!
+- `kpPQR` = 100, 100, 5
 
-If you come back to this step after the next step, you can try tuning just the body rate omega (without
-the outside angle controller) by setting `QuadControlParams.kpBank = 0`.
+2. Roll / pitch control
 
-2. Implement roll / pitch control
-We won't be worrying about yaw just yet.
+Ignoring yaw control for now, the `RollPitchControl` method was implemented and the bank controller
+gain `kpBank` was tuned accordingly by iteratively attempting to get a fast set time, then backing
+off to reduce overshoot. After doing so, the drone's roll angle gets corrected close to 0
+in about 0.065 seconds; however, the body rate controller now takes slightly longer (0.070 seconds)
+to control the roll rate to 0.
 
- - implement the code in the function `RollPitchControl()`
- - Tune `kpBank` in `QuadControlParams.txt` to minimize settling time but avoid too much overshoot
+- `kpPQR` = 78, 78, 5
+- `kpBank` = 3
 
-If successful you should now see the quad level itself (as shown below), though it’ll still be flying
-away slowly since we’re not controlling velocity/position!  You should also see the vehicle angle
-(Roll) get controlled to 0.
+As a result, the drone's reaction did resemble a path somewhat like this:
 
 ![](animations/scenario2.gif)
 
+Note that the animation was provided by the starter code and does not resemble the actual results.
+However, since the GIFs are already in the repo and quite heavy in size, I didn't bother creating
+a new animation that would bloat the repo up even more. For the time being, just take my word for it. 😁
 
 ### Position/velocity and yaw angle control (scenario 3)
 
