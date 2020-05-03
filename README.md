@@ -183,13 +183,22 @@ altitude) into thrust in the body frame. The following rotation relation came in
 
 ![](misc/global-down-to-body.png)
 
-- The `AltitudeControl()` method was implemented first using a PD control scheme.
+- The `AltitudeControl()` method was implemented first using a PD control
+  scheme (with feedforward).
+- The `LateralPositionControl()` method was implemented next, again
+  using a PD control scheme (with feedforward).
+
+The controller parameters had to be re-adjusted and now are
+
+- `kpPQR` = 85, 85, 5
+- `kpBank` = 20
+- `kpVelXY` = 10
+- `kpposXY` = 50
+
+In this configuration, the goal position is reached after 0.375 seconds. Without
+yaw control, one of the two drones does have a bad attitude.
 
 ---
-
- - implement the code in the function `LateralPositionControl()`
- - tune parameters `kpPosZ` and `kpPosZ`
- - tune parameters `kpVelXY` and `kpVelZ`
 
 If successful, the quads should be going to their destination points and tracking error should be
 going down (as shown below). However, one quad remains rotated in yaw.
