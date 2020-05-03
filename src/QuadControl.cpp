@@ -70,17 +70,19 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
 
     ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
-    // The goal of this method is to take a total thrust F and
-    // distribute it across all rotors, such that the specified rotational
-    // moment is obtained.
-    const auto F = collThrustCmd; // F_1 + F_1 + F_2 + F_3
-
     // Perpendicular distance (d_perp, l):
     // The rotors are assembled L units away from the center of mass,
     // at a 45° angle to the body frame coordinate system.
     // Thus, the perpendicular distance l = L * cos(45°).
     // Since cos(45°) = 1/√2, we have
-    const auto d_perp = L * M_SQRT1_2;
+    const auto d_perp = L * static_cast<float>(M_SQRT1_2);
+
+    // The goal of this method is to take a total thrust F and
+    // distribute it across all rotors, such that the specified rotational
+    // moment is obtained.
+    const auto F = collThrustCmd; // F_1 + F_1 + F_2 + F_3
+
+#if 0
 
     // About the maths ...
     //
@@ -109,7 +111,7 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     //   omega_1^2 = c - omega_2^2 - omega_3^2 - omega_4^2
     //
     // Expanding the equations gives
-    //   omega_2^2 = 1/4 (c_bar + p_bar + q_bar + r_bar)
+    //   omega_1^2 = 1/4 (c_bar + p_bar + q_bar + r_bar)
     //   omega_2^2 = 1/4 (c_bar - p_bar + q_bar - r_bar)
     //   omega_3^2 = 1/4 (c_bar - p_bar - q_bar + r_bar)
     //   omega_4^2 = 1/4 (c_bar - p_bar + q_bar - r_bar)
@@ -131,7 +133,7 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     const auto F_bar = F / kappa;
     const auto tau_x_bar = momentCmd.x / (kappa * d_perp);
     const auto tau_y_bar = momentCmd.y / (kappa * d_perp);
-    const auto tau_z_bar = momentCmd.z / d_perp;
+    const auto tau_z_bar = -momentCmd.z / d_perp;
 
     const auto factor = 0.25 / d_perp;
     const auto F1 = factor * (F_bar + tau_x_bar + tau_y_bar + tau_z_bar);
@@ -145,6 +147,51 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     cmd.desiredThrustsN[1] = CONSTRAIN(F2, minMotorThrust, maxMotorThrust); // front right
     cmd.desiredThrustsN[2] = CONSTRAIN(F4, minMotorThrust, maxMotorThrust); // rear left
     cmd.desiredThrustsN[3] = CONSTRAIN(F3, minMotorThrust, maxMotorThrust); // rear right
+
+#else
+
+    // Okay, so the above is apparently incorrect.
+    // After consulting with the internet, this seems to be the _correct_
+    // solution. I do have trouble getting there though.
+    // In the above "solution", we have
+    //
+    //   c_bar = F / k_f
+    //   p_bar = (Ixx u_p_bar) / (k_f * l) = tau_x / (k_f * l)
+    //   q_bar = (Iyy u_q_bar) / (k_f * l) = tau_y / (k_f * l)
+    //   r_bar = (Izz u_z_bar) / (k_m)     = tau_z / k_m
+    //
+    // Clearly, if we multiply all values with k_f, we end up with
+    //
+    //   c_bar' = F
+    //   p_bar' = tau_x / l
+    //   q_bar' = tau_y / l
+    //   r_bar' = tau_z * kf / k_m
+    //
+    // Now r_bar' is a problem, because it already contains Kappa.
+
+    const auto c_bar = F;
+    const auto p_bar =  momentCmd.x / d_perp;
+    const auto q_bar =  momentCmd.y / d_perp;
+    const auto r_bar = -momentCmd.z / kappa;
+
+    const auto F1 = 0.25 * (c_bar + p_bar + q_bar + r_bar);
+    const auto F2 = 0.25 * (c_bar - p_bar + q_bar - r_bar);
+    const auto F3 = 0.25 * (c_bar + p_bar - q_bar - r_bar);
+    const auto F4 = 0.25 * (c_bar - p_bar - q_bar + r_bar);
+
+    // It appears we don't have to concern ourselves with the details
+    // of limiting the thrust range.
+    cmd.desiredThrustsN[0] = F1; // front left
+    cmd.desiredThrustsN[1] = F2; // front right
+    cmd.desiredThrustsN[2] = F3; // rear left
+    cmd.desiredThrustsN[3] = F4; // rear right
+
+    // cmd.desiredThrustsN[0] = CONSTRAIN(F1, minMotorThrust, maxMotorThrust); // front left
+    // cmd.desiredThrustsN[1] = CONSTRAIN(F2, minMotorThrust, maxMotorThrust); // front right
+    // cmd.desiredThrustsN[2] = CONSTRAIN(F3, minMotorThrust, maxMotorThrust); // rear left
+    // cmd.desiredThrustsN[3] = CONSTRAIN(F4, minMotorThrust, maxMotorThrust); // rear right
+
+#endif
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -203,10 +250,33 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
     //  - you'll need the roll/pitch gain kpBank
     //  - collThrustCmd is a force in Newtons! You'll likely want to convert it to acceleration first
 
-    V3F pqrCmd;
+    V3F pqrCmd { 0.0, 0.0, 0.0 };
     Mat3x3F R = attitude.RotationMatrix_IwrtB();
 
     ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
+
+    if (collThrustCmd <= 0) {
+        return pqrCmd;
+    }
+
+    // In NED, down is the new up.
+    const auto acceleration = -collThrustCmd / mass;
+
+    // Target roll and pitch rates.
+    const auto b_x_c_target = CONSTRAIN(accelCmd.x / acceleration, -maxTiltAngle, maxTiltAngle);
+    const auto b_y_c_target = CONSTRAIN(accelCmd.y / acceleration, -maxTiltAngle, maxTiltAngle);
+
+    // Actual roll and pitch values.
+    const auto b_x = R(0,2);
+    const auto b_y = R(1,2);
+
+    // P controller for roll and pitch rates.
+    const auto b_x_commanded_dot = kpBank * (b_x_c_target - b_x);
+    const auto b_y_commanded_dot = kpBank * (b_y_c_target - b_y);
+
+    // Convert to rates in the body frame.
+    pqrCmd.x = (R(1,0) * b_x_commanded_dot - R(0,0) * b_y_commanded_dot) / R(2,2);
+    pqrCmd.y = (R(1,1) * b_x_commanded_dot - R(0,1) * b_y_commanded_dot) / R(2,2);
 
     /////////////////////////////// END STUDENT CODE ////////////////////////////
 
