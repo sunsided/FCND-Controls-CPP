@@ -130,40 +130,51 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
     // core realization required to solve this problem:
     //
     // We know that
-    //   - F   = kf * omega^2
-    //   - tau = km * omega^2
+    //
+    //    F   = kf * omega^2
+    //    tau = km * omega^2
     //
     // Thus thrust and torque are coupled by the angular velocity.
     // Equating both gives
-    //   - F / kf  = tau / km
-    //   - tau / F = km / kf
+    //
+    //    F / kf  = tau / km
+    //    tau / F = km / kf
     //
     // From the source code (BaseController.h) and the physical parameters (QuadPhysicalParams.txt)
-    // we know that kappa is "torque (Nm) produced by motor per N of thrust produced"
-    // and specifically, torque = kappa * thrust. This
-    //   - tau = kappa * F
+    // we know that kappa is "torque (Nm) produced by motor per N of thrust produced", thus
+    //
+    //    kappa = tau / F
+    //
+    // and specifically, "torque = kappa * thrust". This also follows directly from the equations above:
+    //
+    //    tau = kappa * F
     //
     // The rest of the problem is pretty straightforward, we have:
-    //   - F =  F1 + F2 + F3 + F3
+    //
+    //    F =  F1 + F2 + F3 + F3
     //
     // and for the roll and pitch moments:
-    //   - tau_x = (F1 - F2 - F3 + F4) * l
-    //   - tau_y = (F1 + F2 - F3 - F4) * l
+    //
+    //    tau_x = (F1 - F2 - F3 + F4) * l
+    //    tau_y = (F1 + F2 - F3 - F4) * l
     //
     // The yaw moment is a result of the (signed!) moments induced by each motor
     // (do note that the exercise notebook to the lesson ignores the signs, which leads to extra confusion):
-    //   - tau_z = tau_1 - tau_2 + tau_3 - tau_4
+    //
+    //    tau_z = tau_1 - tau_2 + tau_3 - tau_4
     //
     // Applying the kappa trick mentioned above, we find that
-    //   - tau_z = (F1 - F2 + F3 - F4) * kappa
+    //
+    //   tau_z = (F1 - F2 + F3 - F4) * kappa
     //
     // At this point, we have four unknowns F1, F2, F3, F4, as well as four
     // knowns F, tau_x, tau_y, tau_z. If we build a linear system and solve for F1 .. F4,
     // we find that
-    //   - F1 = 1/4 * (F + tau_x/l + tau_y/l + tau_z/kappa)
-    //   - F2 = 1/4 * (F - tau_x/l + tau_y/l - tau_z/kappa)
-    //   - F3 = 1/4 * (F - tau_x/l - tau_y/l + tau_z/kappa)
-    //   - F4 = 1/4 * (F + tau_x/l - tau_y/l - tau_z/kappa)
+    //
+    //    F1 = 1/4 * (F + tau_x/l + tau_y/l + tau_z/kappa)
+    //    F2 = 1/4 * (F - tau_x/l + tau_y/l - tau_z/kappa)
+    //    F3 = 1/4 * (F - tau_x/l - tau_y/l + tau_z/kappa)
+    //    F4 = 1/4 * (F + tau_x/l - tau_y/l - tau_z/kappa)
     //
     // A final twist is that the rotor numbering from the notebooks differ
     // from the one in the simulator; specifically, rotor 3 and 4 are swapped.
