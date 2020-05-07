@@ -1,4 +1,4 @@
-# 3D Quadrocopter Control
+# 3D Quadrotor Control
 
 ![](misc/controllers.png)
 
