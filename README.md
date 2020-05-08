@@ -1,5 +1,8 @@
 # 3D Quadrotor Control
 
+In this project, PID control for a simulated drone is implemented. Note that the controller code that was developed
+here is also used in the follow-up [Quadrotor Sensor Fusion and Pose Estimation](https://github.com/sunsided/FCND-Estimation-CPP) project. 🚁
+
 ![](misc/controllers.png)
 
 ### Development environment
